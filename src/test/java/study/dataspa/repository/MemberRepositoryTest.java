@@ -4,11 +4,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import study.dataspa.dto.MemberDto;
 import study.dataspa.entity.Member;
+import study.dataspa.entity.Team;
 
+import javax.print.attribute.standard.PageRanges;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
+
+    @Autowired
+    TeamRepository teamRepository;
 
     @Test
     @DisplayName("테스트 1번")
@@ -61,5 +74,195 @@ public class MemberRepositoryTest {
 
         Long deleteCount = memberRepository.count();
         assertThat(deleteCount).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("테스트 3번")
+    public void findByUsernameAndAgeGreaterThen() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("aaa", 20);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<Member> aaa = memberRepository.findByUsernameAndAgeGreaterThan("aaa", 15);
+        assertThat(aaa.size()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("테스트 5번")
+    public void findByUsername() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("aaa", 20);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<Member> aaa = memberRepository.findByUsername("aaa");
+        assertThat(aaa.size()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("테스트 6번")
+    public void findByUser() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("aaa", 20);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<Member> aaa = memberRepository.findUser("aaa", 10);
+        assertThat(aaa.size()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("테스트 7번")
+    public void findByUsernameList() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("bbb", 20);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<String> aaa = memberRepository.findByUsernameList();
+        assertThat(aaa.get(0)).isEqualTo("aaa");
+        assertThat(aaa.get(1)).isEqualTo("bbb");
+    }
+
+    @Test
+    @DisplayName("테스트 8번")
+    public void findMemberDto() {
+        Team team = new Team("teamA");
+        teamRepository.save(team);
+
+        Member memberA = new Member("aaa", 10);
+        memberA.setTeam(team);
+        memberRepository.save(memberA);
+
+
+        List<MemberDto> memberDtoList = memberRepository.findMemberDto();
+        assertThat(memberDtoList.get(0).getUsername()).isEqualTo("aaa");
+        assertThat(memberDtoList.get(0).getTeamname()).isEqualTo("teamA");
+    }
+
+    @Test
+    @DisplayName("테스트 9번")
+    public void findByNames() {
+        Member memberA = new Member("aaa", 10);
+        memberRepository.save(memberA);
+
+        Member memberB = new Member("bbb", 10);
+        memberRepository.save(memberB);
+
+        List<Member> memberDtoList = memberRepository.findByNames(Arrays.asList("aaa","bbb"));
+        for (Member member : memberDtoList) {
+            System.out.println("member.getUsername() = " + member.getUsername());
+        }
+    }
+
+    @Test
+    @DisplayName("테스트 10번")
+    public void returnType() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("bbb", 10);
+        memberRepository.save(memberA);
+        memberRepository.save(memberB);
+
+        List<Member> listMember = memberRepository.findListByUsername("aaa");
+        for (Member member : listMember) {
+            System.out.println("member.getUsername() = " + member.getUsername());
+        }
+
+        Member member = memberRepository.findMemberByUsername("aaa");
+        System.out.println("member.getUsername() = " + member.getUsername());
+
+        Optional<Member> optionalMember = memberRepository.findOptionalByUsername("aaa");
+        Member findMember = optionalMember.get();
+        System.out.println("findMember.getUsername() = " + findMember.getUsername());
+    }
+
+    @Test
+    @DisplayName("테스트 11번")
+    public void paging() {
+        Member member1 = new Member("member1", 10);
+        Member member2 = new Member("member2", 10);
+        Member member3 = new Member("member3", 10);
+        Member member4 = new Member("member4", 10);
+        Member member5 = new Member("member5", 10);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+        memberRepository.save(member3);
+        memberRepository.save(member4);
+        memberRepository.save(member5);
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        Page<Member> page = memberRepository.findPageByAge(age, pageRequest);
+        List<Member> content = page.getContent();
+        long totalCount = page.getTotalElements();
+
+        /*
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+        System.out.println("totalCount = " + totalCount);
+        */
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+
+        // 페이지 유지하면서 dto로 변환
+        Page<MemberDto> toMap = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+    }
+
+    @Test
+    @DisplayName("테스트 12번")
+    public void pagingSlice() {
+        Member member1 = new Member("member1", 10);
+        Member member2 = new Member("member2", 10);
+        Member member3 = new Member("member3", 10);
+        Member member4 = new Member("member4", 10);
+        Member member5 = new Member("member5", 10);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+        memberRepository.save(member3);
+        memberRepository.save(member4);
+        memberRepository.save(member5);
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        Slice<Member> slice = memberRepository.findSliceByAge(age, pageRequest);
+        List<Member> content = slice.getContent();
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(slice.getNumber()).isEqualTo(0);
+        assertThat(slice.isFirst()).isTrue();
+        assertThat(slice.hasNext()).isTrue();
+    }
+
+    @Test
+    @DisplayName("테스트 13번")
+    public void list() {
+        Member member1 = new Member("member1", 10);
+        Member member2 = new Member("member2", 10);
+        Member member3 = new Member("member3", 10);
+        Member member4 = new Member("member4", 10);
+        Member member5 = new Member("member5", 10);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+        memberRepository.save(member3);
+        memberRepository.save(member4);
+        memberRepository.save(member5);
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        List<Member> content = memberRepository.findListByAge(age, pageRequest);
+        assertThat(content.size()).isEqualTo(3);
     }
 }
