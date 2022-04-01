@@ -1,6 +1,5 @@
 package study.dataspa.repository;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,7 @@ import study.dataspa.entity.Member;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
@@ -62,5 +61,54 @@ class MemberJpaRepositoryTest {
 
         Long deleteCount = memberJpaRepository.count();
         assertThat(deleteCount).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("테스트 3번")
+    public void findByUsernameAndAgeGreaterThen() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("aaa", 20);
+        memberJpaRepository.save(memberA);
+        memberJpaRepository.save(memberB);
+
+        List<Member> aaa = memberJpaRepository.findByUsernameAndAgeGreaterThen("aaa", 15);
+        assertThat(aaa.size()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("테스트 4번")
+    public void findByUsername() {
+        Member memberA = new Member("aaa", 10);
+        Member memberB = new Member("aaa", 20);
+        memberJpaRepository.save(memberA);
+        memberJpaRepository.save(memberB);
+
+        List<Member> aaa = memberJpaRepository.findByUsername("aaa");
+        assertThat(aaa.size()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("테스트 5번")
+    public void paging() {
+        Member member1 = new Member("member1", 10);
+        Member member2 = new Member("member2", 20);
+        Member member3 = new Member("member3", 30);
+        Member member4 = new Member("member4", 40);
+        Member member5 = new Member("member5", 50);
+
+        memberJpaRepository.save(member1);
+        memberJpaRepository.save(member2);
+        memberJpaRepository.save(member3);
+        memberJpaRepository.save(member4);
+        memberJpaRepository.save(member5);
+
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        List<Member> members = memberJpaRepository.findByPage(age, offset, limit);
+        long totalCount = memberJpaRepository.totalCount(age);
+
+        assertThat(members.size()).isEqualTo(totalCount);
     }
 }
