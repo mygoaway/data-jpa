@@ -14,11 +14,8 @@ import study.dataspa.dto.MemberDto;
 import study.dataspa.entity.Member;
 import study.dataspa.entity.Team;
 
-import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.print.attribute.standard.PageRanges;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -353,5 +350,10 @@ public class MemberRepositoryTest {
 
         // when
         List<Member> findMember = memberRepository.findLockByUsername("member1");
+    }
+
+    @Test
+    public void custom() {
+        memberRepository.findMemberCustom();
     }
 }
