@@ -14,8 +14,8 @@ import study.dataspa.dto.MemberDto;
 import study.dataspa.entity.Member;
 import study.dataspa.entity.Team;
 
-import javax.print.attribute.standard.PageRanges;
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +31,9 @@ public class MemberRepositoryTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     @DisplayName("테스트 1번")
@@ -264,5 +267,93 @@ public class MemberRepositoryTest {
 
         List<Member> content = memberRepository.findListByAge(age, pageRequest);
         assertThat(content.size()).isEqualTo(3);
+    }
+
+
+    @Test
+    @DisplayName("테스트 14번")
+    public void bulkAgePlus() {
+        Member member1 = new Member("member1", 10);
+        Member member2 = new Member("member2", 19);
+        Member member3 = new Member("member3", 20);
+        Member member4 = new Member("member4", 21);
+        Member member5 = new Member("member5", 40);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+        memberRepository.save(member3);
+        memberRepository.save(member4);
+        memberRepository.save(member5);
+
+        int age = 20;
+        int resultCount = memberRepository.bulkAgePlus(age);
+        // em.flush();
+        // em.clear();
+
+        List<Member> findMember = memberRepository.findByUsername("member5");
+        Member member = findMember.get(0);
+        System.out.println("member.getAge() = " + member.getAge());
+
+        assertThat(resultCount).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("테스트 15번")
+    public void findMemberLazy() {
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 20, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        // 영속성 컨택스트에 있는 내용을 DB 반영 후 초기화 작업
+        em.flush();
+        em.clear();
+
+        // List<Member> members = memberRepository.findAll();
+        // List<Member> members = memberRepository.findMemberFetchJoin();
+        // List<Member> members = memberRepository.findMemberEntityGraph();
+        List<Member> members = memberRepository.findEntityGraphByUsername("member2");
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.getTeam().getClass() = " + member.getTeam().getClass());
+            System.out.println("member.getTeam().getName() = " + member.getTeam().getName());
+        }
+    }
+
+    @Test
+    public void queryHint() {
+        // given
+        Member member = new Member("member1", 10);
+        memberRepository.save(member);
+        em.flush();
+        em.clear();
+
+        // when
+        Member findMember = memberRepository.findReadOnlyByUsername("member1");
+        findMember.setUsername("member2");
+        em.flush(); // 상태가 바꼇다는걸 인지(dirty checking)
+    }
+
+    @Test
+    public void lock() {
+        // given
+        Member member = new Member("member1", 10);
+        memberRepository.save(member);
+        em.flush();
+        em.clear();
+
+        // when
+        List<Member> findMember = memberRepository.findLockByUsername("member1");
+    }
+
+    @Test
+    public void custom() {
+        memberRepository.findMemberCustom();
     }
 }
