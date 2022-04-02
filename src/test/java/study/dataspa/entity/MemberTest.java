@@ -1,9 +1,11 @@
 package study.dataspa.entity;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import study.dataspa.repository.MemberRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -19,6 +21,9 @@ class MemberTest {
 
     @PersistenceContext
     EntityManager em;
+
+    @Autowired
+    MemberRepository memberRepository;
 
     @Test
     public void testEntity() {
@@ -47,5 +52,17 @@ class MemberTest {
             System.out.println("member = " + member);
             System.out.println("member.getTeam() = " + member.getTeam());
         }
+    }
+
+    @Test
+    public void testName() {
+        // given
+        Member member1 = new Member("member1");
+        memberRepository.save(member1); // @PrePersist
+
+        member1.setUsername("member2"); // @PreUpdate
+        em.flush();
+        em.clear();
+
     }
 }
