@@ -356,4 +356,22 @@ public class MemberRepositoryTest {
     public void custom() {
         memberRepository.findMemberCustom();
     }
+
+    @Test
+    public void findByNativeQuery() {
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 20, teamA);
+        em.persist(member1);
+        em.persist(member2);
+
+        em.flush();
+        em.clear();
+
+        // when
+        Member findMember = memberRepository.findByNativeQuery("member1");
+        System.out.println("findMember = " + findMember);
+    }
 }
